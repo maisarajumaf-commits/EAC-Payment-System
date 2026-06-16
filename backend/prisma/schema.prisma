@@ -1,0 +1,107 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  role      String   @default("CUSTOMER") // CUSTOMER or BANK
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  customer  Customer?
+  bank      Bank?
+  auditLogs AuditLog[]
+}
+
+model Customer {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fullName        String?
+  phoneNumber     String?
+  walletAddress   String?  @unique
+  encryptedKey    String?
+  mnemonicConfirmed Boolean @default(false)
+  offChainBalance Decimal  @default(0) @db.Decimal(18, 8)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  transactions Transaction[] @relation("sender")
+}
+
+model Bank {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name            String   @unique
+  country         String
+  swiftCode       String   @unique
+  relayerAddress  String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Transaction {
+  id                  String   @id @default(cuid())
+  senderId            String
+  sender              Customer @relation("sender", fields: [senderId], references: [id])
+  sourceCurrency      String   @db.VarChar(3)
+  destinationCurrency String   @db.VarChar(3)
+  sourceAmount        Decimal  @db.Decimal(18, 8)
+  destinationAmount   Decimal  @db.Decimal(18, 8)
+  fxRate              Decimal  @db.Decimal(18, 8)
+  fee                 Decimal  @db.Decimal(18, 8)
+  status              String   @default("INITIATED") // INITIATED, CONFIRMED, REJECTED
+  onChainTxHash       String?
+  blockNumber         BigInt?
+  chainConfirmedAt    DateTime?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+model BlockchainBlock {
+  index        BigInt  @id
+  previousHash String
+  hash         String  @unique
+  payload      Json
+  createdAt    DateTime @default(now())
+}
+
+model FxRate {
+  id             String   @id @default(cuid())
+  baseCurrency   String   @db.VarChar(3)
+  quoteCurrency  String   @db.VarChar(3)
+  midRate        Decimal  @db.Decimal(18, 8)
+  spread         Decimal  @db.Decimal(5, 4) @default(0.008)
+  updatedAt      DateTime @updatedAt
+
+  @@unique([baseCurrency, quoteCurrency])
+}
+
+model WalletEvent {
+  id          String   @id @default(cuid())
+  walletAddress String
+  eventType   String   // deposit, withdrawal, transfer
+  amount      Decimal  @db.Decimal(18, 8)
+  token       String
+  txHash      String?
+  blockNumber BigInt?
+  createdAt   DateTime @default(now())
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action    String
+  resourceId String?
+  ip        String?
+  createdAt DateTime @default(now())
+}
