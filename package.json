@@ -1,0 +1,33 @@
+{
+  "name": "eac-payment-system",
+  "version": "1.0.0",
+  "description": "Blockchain-Based Cross-Border Payment System for East Africa",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "setup": "pnpm install && pnpm --recursive run build",
+    "dev": "pnpm --recursive --parallel run dev",
+    "build": "pnpm --recursive run build",
+    "test": "pnpm --recursive run test",
+    "test:coverage": "pnpm --recursive run test:coverage",
+    "lint": "pnpm --recursive run lint",
+    "format": "pnpm --recursive run format",
+    "type-check": "pnpm --recursive run type-check",
+    "start": "pnpm --recursive run start"
+  },
+  "workspaces": [
+    "frontend",
+    "backend",
+    "contracts",
+    "shared"
+  ],
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.3.0",
+    "prettier": "^3.1.0"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=8.0.0"
+  }
+}
